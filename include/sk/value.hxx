@@ -284,12 +284,10 @@ namespace sk {
 /*
  * std::hash<> support.
  */
-namespace std {
-    template <> struct hash<sk::value> {
-        std::size_t operator()(sk::value const &v) const noexcept {
-            return v.object->hash();
-        }
-    };
-} // namespace std
+template <> struct std::hash<sk::value> {
+    std::size_t operator()(sk::value const &v) const  {
+        return v.object->hash();
+    }
+};
 
 #endif // SK_VALUE_HXX_INCLUDED
