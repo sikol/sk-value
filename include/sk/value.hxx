@@ -314,7 +314,7 @@ namespace sk {
     /*
      * ostream output support.
      */
-    auto operator<<(std::ostream &strm, sk::value const &v) -> std::ostream & {
+    inline auto operator<<(std::ostream &strm, sk::value const &v) -> std::ostream & {
         strm << v.str();
         return strm;
     }
