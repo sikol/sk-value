@@ -30,9 +30,9 @@
 #include <catch.hpp>
 
 #include <cstring>
+#include <sstream>
 #include <stdexcept>
 #include <string>
-#include <sstream>
 
 #include "sk/value.hxx"
 
@@ -127,4 +127,14 @@ TEST_CASE("empty value") {
     REQUIRE(v == v2);
     REQUIRE(!(v < v2));
     REQUIRE(!(v2 < v));
+}
+
+TEST_CASE("value reference construction") {
+    std::string s;
+    std::string const &sref = s;
+
+    sk::value v{s};
+    sk::value vref{sref};
+    v = s;
+    v = sref;
 }

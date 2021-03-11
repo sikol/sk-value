@@ -43,9 +43,13 @@
 
 namespace sk {
 
+    struct value;
+
     // clang-format off
     template<typename T>
-    concept value_containable = requires (T &o) {
+    concept value_containable = 
+        not std::same_as<typename std::remove_cvref<T>::type, value>
+        and requires (T &o) {
         { std::hash<T>{}(o) } -> std::same_as<std::size_t>;
     };
 
@@ -140,9 +144,12 @@ namespace sk {
             : object(std::make_unique<value_instance<nullptr_t>>(nullptr)) {}
 
         // Create a value from a value_containable.
-        template <value_containable T>
-        explicit value(T &&v)
-            : object(std::make_unique<value_instance<T>>(std::forward<T>(v))) {}
+        template <typename T>
+            explicit value(T &&v) requires value_containable<
+                typename std::remove_cvref<T>::type>
+            : object(std::make_unique<
+                     value_instance<typename std::remove_cvref<T>::type>>(
+                  std::forward<T>(v))) {}
 
         // A value created from a C string should be stored
         // as an std::basic_string for consistency.
@@ -165,8 +172,13 @@ namespace sk {
         value(value &&other) noexcept : object(std::move(other.object)) {}
 
         // Assign a value from a value_containable.
-        template <value_containable T> auto operator=(T &&v) -> value & {
-            object = std::make_unique<value_instance<T>>(std::forward<T>(v));
+        template <typename T>
+        auto operator=(T &&v) -> value
+            &requires value_containable<typename std::remove_cvref<T>::type> {
+
+            object = std::make_unique<
+                value_instance<typename std::remove_cvref<T>::type>>(
+                std::forward<T>(v));
             return *this;
         }
 
