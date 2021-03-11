@@ -53,6 +53,12 @@ namespace sk {
     concept value_printable = requires (T &o, std::ostream &strm) {
         { strm << o } -> std::same_as<std::ostream &>;
     };
+
+    template<typename T>
+    concept value_lt_comparable = requires(T &o) {
+        { o < o } -> std::same_as<bool>;
+    };
+
     // clang-format on
 
     template <value_containable T>
@@ -67,6 +73,18 @@ namespace sk {
     auto value_containable_to_string(T const &v) -> std::string
         requires !value_printable<T> {
         return "<value>";
+    }
+
+    template <value_containable T>
+    auto value_lt_compare(T const &a, T const &b)
+        -> bool requires value_lt_comparable<T> {
+        return a < b;
+    }
+
+    template <value_containable T>
+    auto value_lt_compare(T const &a, T const &b)
+        -> bool requires !value_lt_comparable<T> {
+        return false;
     }
 
     struct value_base {
@@ -109,7 +127,7 @@ namespace sk {
             auto const *p = dynamic_cast<value_instance<T> const *>(other);
             if (!p)
                 return false;
-            return object < p->object;
+            return value_lt_compare(object, p->object);
         }
     };
 
@@ -118,7 +136,8 @@ namespace sk {
      */
     struct value {
         // Create an empty value.
-        value() = default;
+        value()
+            : object(std::make_unique<value_instance<nullptr_t>>(nullptr)) {}
 
         // Create a value from a value_containable.
         template <value_containable T>
@@ -183,7 +202,8 @@ namespace sk {
         std::unique_ptr<value_base> object;
 
         auto empty() const -> bool {
-            return !object.operator bool();
+            static value_instance<nullptr_t> null_value;
+            return object->eq(&null_value);
         }
 
         auto str() const -> std::string {
@@ -229,6 +249,14 @@ namespace sk {
     template <value_containable T>
     inline auto operator==(T const &a, value const &b) -> bool {
         return b == a;
+    }
+
+    inline auto operator==(value const &a, nullptr_t) -> bool {
+        return a.empty();
+    }
+
+    inline auto operator==(nullptr_t, value const &b) -> bool {
+        return b.empty();
     }
 
     inline auto operator==(value const &a, char const *b) -> bool {
@@ -285,7 +313,7 @@ namespace sk {
  * std::hash<> support.
  */
 template <> struct std::hash<sk::value> {
-    std::size_t operator()(sk::value const &v) const  {
+    std::size_t operator()(sk::value const &v) const {
         return v.object->hash();
     }
 };

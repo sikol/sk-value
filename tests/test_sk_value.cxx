@@ -118,9 +118,13 @@ TEST_CASE("int value") {
 TEST_CASE("empty value") {
     sk::value v;
     REQUIRE(v.empty());
+    REQUIRE(v == nullptr);
     REQUIRE(v != 42);
 
     sk::value v2{v};
     REQUIRE(v2.empty());
+
     REQUIRE(v == v2);
+    REQUIRE(!(v < v2));
+    REQUIRE(!(v2 < v));
 }
